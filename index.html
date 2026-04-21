@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolton Motors — Solicitud de Transporte</title>
+<style>
+  :root {
+    --bg-dark: #1C1C1C;
+    --bg-darker: #141414;
+    --bg-nav: #2A2A2A;
+    --gold: #C8A961;
+    --gold-light: #D4BC7E;
+    --accent: #C8A961;
+    --green: #2ECC71;
+    --yellow: #F1C40F;
+    --orange: #E67E22;
+    --red: #E74C3C;
+    --blue: #3498DB;
+    --light: #F4F4F4;
+    --white: #FFFFFF;
+    --border: #D5D8DC;
+    --text: #2C3E50;
+    --muted: #7F8C8D;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--light); color: var(--text); line-height: 1.5; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 16px; }
+
+  /* Header — Bolton branding */
+  .header { background: var(--bg-dark); color: var(--white); padding: 14px 24px; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .header h1 .brand-gold { color: var(--gold); }
+  .header .subtitle { font-size: 11px; opacity: 0.5; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Bolton logo SVG */
+  .bolton-logo { width: 40px; height: 40px; }
+
+  /* Tabs */
+  .tabs { display: flex; background: var(--bg-nav); border-bottom: 1px solid #3A3A3A; }
+  .tab-btn { flex: 1; padding: 12px 16px; background: none; border: none; color: rgba(255,255,255,0.45); font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; border-bottom: 3px solid transparent; }
+  .tab-btn:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.03); }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); background: rgba(255,255,255,0.05); }
+  .tab-badge { display: inline-block; background: var(--gold); color: var(--bg-dark); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: 6px; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Form body */
+  .form-body { background: var(--white); box-shadow: 0 2px 12px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; overflow: hidden; }
+
+  .section { padding: 16px 24px; border-bottom: 1px solid #EEE; }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--bg-dark); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--gold); display: flex; align-items: center; gap: 8px; }
+
+  .row { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; flex: 1; min-width: 140px; }
+  .field.small { flex: 0.5; min-width: 100px; }
+  .field.wide { flex: 2; min-width: 280px; }
+
+  label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
+  input, select, textarea {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px;
+    font-size: 14px; font-family: inherit; color: var(--text); background: var(--white);
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(200,169,97,0.15); }
+  textarea { resize: vertical; min-height: 60px; }
+  input[readonly] { background: #F8F9FA; color: var(--muted); }
+
+  /* Merchandise table */
+  .merch-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  .merch-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; text-align: left; padding: 6px 4px; border-bottom: 2px solid var(--border); }
+  .merch-table td { padding: 4px; vertical-align: middle; }
+  .merch-table select, .merch-table input { width: 100%; padding: 6px 8px; font-size: 13px; }
+  .merch-table .qty-input { width: 60px; text-align: center; }
+  .merch-table .vin-input { width: 100%; font-size: 12px; font-family: 'Consolas', monospace; }
+
+  .btn-remove { background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+  .btn-remove:hover { background: #FDEDEC; }
+
+  .add-row-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--light); border: 1px dashed var(--border); padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; color: var(--bg-dark); font-weight: 600; }
+  .add-row-btn:hover { background: #E8E8E8; border-color: var(--gold); }
+
+  .total-badge { display: inline-block; background: var(--bg-dark); color: var(--gold); padding: 4px 14px; border-radius: 16px; font-size: 13px; font-weight: 700; margin-left: 12px; }
+
+  .submit-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: var(--bg-dark); color: var(--gold); border: none; border-radius: 6px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px; }
+  .submit-btn:hover { background: #000; }
+
+  /* Toast */
+  .toast { display: none; position: fixed; top: 20px; right: 20px; background: var(--green); color: var(--white); padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 999; animation: slideIn 0.3s ease; }
+  .toast.show { display: block; }
+  @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ─── STATUS BADGES ─── */
+  .status-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .status-pending      { background: #F5EEF8; color: #8E44AD; }
+  .status-scheduled    { background: #EBF5FB; color: #2980B9; }
+  .status-in-transit   { background: #FEF9E7; color: #D4AC0D; }
+  .status-delivered    { background: #EAFAF1; color: #27AE60; }
+  .status-issue        { background: #FDEDEC; color: #E74C3C; }
+  .status-cancelled    { background: #F2F3F4; color: #95A5A6; text-decoration: line-through; }
+
+  .status-select { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 2px solid var(--border); cursor: pointer; background: var(--white); }
+  .status-select:focus { border-color: var(--gold); }
+  .status-select option { font-weight: 600; }
+
+  /* ─── DASHBOARD ─── */
+  .dashboard-empty { padding: 60px 24px; text-align: center; color: var(--muted); }
+  .dashboard-empty .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  .request-card { border: 1px solid var(--border); border-radius: 8px; margin: 0 24px 12px; overflow: hidden; transition: box-shadow 0.15s; }
+  .request-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .request-card.status-cancelled-card { opacity: 0.5; }
+
+  .card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: #FAFAFA; cursor: pointer; gap: 8px; }
+  .card-header:hover { background: #F0F0F0; }
+  .card-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
+  .card-left .order-num { font-weight: 700; color: var(--bg-dark); font-size: 14px; }
+  .card-left .date { font-size: 12px; color: var(--muted); }
+  .card-left .pieces { font-size: 11px; background: var(--bg-dark); color: var(--gold); padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .card-left .foranea-tag { font-size: 10px; background: var(--orange); color: var(--white); padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+  .card-left .dest-name { font-size: 12px; color: var(--muted); }
+  .card-right { display: flex; align-items: center; gap: 8px; }
+
+  .card-body { display: none; padding: 16px; border-top: 1px solid var(--border); font-size: 13px; }
+  .card-body.open { display: block; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-bottom: 12px; }
+  .detail-label { font-size: 10px; text-transform: uppercase; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; }
+  .detail-value { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+
+  .merch-summary { background: #F8F9FA; padding: 10px 12px; border-radius: 4px; margin-bottom: 10px; }
+  .merch-summary .line { display: flex; gap: 8px; align-items: center; padding: 2px 0; font-size: 13px; }
+  .merch-summary .line .qty { font-weight: 700; color: var(--bg-dark); min-width: 30px; }
+
+  .copy-block { background: var(--bg-dark); border-radius: 6px; overflow: hidden; margin-top: 10px; }
+  .copy-block-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.05); }
+  .copy-block-header span { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; }
+  .copy-btn { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--gold); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .copy-btn:hover { background: rgba(200,169,97,0.15); }
+  .copy-btn.copied { background: var(--green); border-color: var(--green); color: var(--white); }
+  .copy-block-content { padding: 10px 12px; color: #D0D0D0; font-size: 12px; font-family: 'Consolas', monospace; white-space: pre-wrap; line-height: 1.6; max-height: 200px; overflow-y: auto; }
+
+  .btn-small { padding: 5px 10px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: var(--white); color: var(--text); }
+  .btn-small:hover { background: var(--light); }
+  .btn-small.danger { color: var(--red); border-color: var(--red); }
+  .btn-small.danger:hover { background: #FDEDEC; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: var(--white); border-bottom: 1px solid #EEE; flex-wrap: wrap; gap: 8px; }
+  .toolbar-left { font-size: 13px; color: var(--muted); }
+  .toolbar-right { display: flex; gap: 8px; }
+
+  /* Status filter pills */
+  .status-filters { display: flex; gap: 4px; flex-wrap: wrap; padding: 10px 24px; background: #FAFAFA; border-bottom: 1px solid #EEE; }
+  .filter-pill { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--white); cursor: pointer; color: var(--muted); transition: all 0.15s; }
+  .filter-pill:hover { border-color: var(--gold); color: var(--text); }
+  .filter-pill.active { background: var(--bg-dark); color: var(--gold); border-color: var(--bg-dark); }
+
+  @media (max-width: 600px) {
+    .container { padding: 8px; }
+    .row { flex-direction: column; gap: 8px; }
+    .field, .field.small, .field.wide { min-width: 100%; }
+    .header h1 { font-size: 15px; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .card-left { gap: 6px; }
+    .request-card { margin: 0 12px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <!-- Bolton "B" logo -->
+      <svg class="bolton-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 10 L20 90 L55 90 Q80 90 80 70 Q80 55 60 50 Q75 45 75 32 Q75 10 55 10 Z M35 22 L50 22 Q60 22 60 32 Q60 42 50 42 L35 42 Z M35 52 L52 52 Q65 52 65 67 Q65 78 52 78 L35 78 Z" fill="#C8A961"/>
+      </svg>
+      <div>
+        <h1><span class="brand-gold">Bolton</span> Motors</h1>
+        <div class="subtitle">Solicitudes de Transporte</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('form')">📝 Nueva Solicitud</button>
+    <button class="tab-btn" id="dashTab" onclick="switchTab('dashboard')">📋 Solicitudes <span class="tab-badge" id="countBadge">0</span></button>
+  </div>
+
+  <div class="form-body">
+
+    <!-- ═══════════ TAB 1: FORM (SALES) ═══════════ -->
+    <div class="tab-content active" id="tab-form">
+      <form id="transportForm" onsubmit="return false;">
+
+        <div class="section">
+          <div class="section-title">Datos de la Solicitud</div>
+          <div class="row">
+            <div class="field">
+              <label>Fecha de Solicitud</label>
+              <input type="date" id="fechaSolicitud" readonly>
+            </div>
+            <div class="field">
+              <label>Fecha de Servicio Requerida *</label>
+              <input type="date" id="fechaServicio" required>
+            </div>
+            <div class="field">
+              <label>No. de Pedido *</label>
+              <input type="text" id="noPedido" placeholder="Ej: 1234" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Solicitante *</label>
+              <input type="text" id="solicitante" placeholder="Tu nombre" required>
+            </div>
+            <div class="field">
+              <label>Tipo de Envio</label>
+              <select id="tipoServicio">
+                <option value="Local">Local</option>
+                <option value="Foráneo">Foráneo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Destino de Entrega</div>
+          <div class="row">
+            <div class="field wide">
+              <label>Nombre / Empresa del destinatario *</label>
+              <input type="text" id="destinatario" placeholder="Nombre del dealer, tienda, o cliente" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field wide">
+              <label>Domicilio completo *</label>
+              <input type="text" id="domicilioEntrega" placeholder="Calle, numero, colonia, ciudad, estado, CP" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Contacto en destino *</label>
+              <input type="text" id="contactoEntrega" placeholder="Nombre de quien recibe" required>
+            </div>
+            <div class="field small">
+              <label>Telefono *</label>
+              <input type="tel" id="telEntrega" placeholder="55 1234 5678" required>
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" id="emailEntrega" placeholder="email@ejemplo.com">
+            </div>
+          </div>
+          <div class="row">
+            <div class="field wide">
+              <label>Referencia</label>
+              <input type="text" id="referencia" placeholder="Punto de referencia para la entrega">
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Motocicletas <span class="total-badge" id="totalBadge">0 piezas</span></div>
+          <table class="merch-table">
+            <thead>
+              <tr>
+                <th style="width:22%">Modelo</th>
+                <th style="width:8%">Cant.</th>
+                <th style="width:16%">Color</th>
+                <th style="width:40%">VIN (opcional)</th>
+                <th style="width:5%"></th>
+              </tr>
+            </thead>
+            <tbody id="merchBody">
+              <tr>
+                <td><select class="sku-select" onchange="updateTotal()"><option value="">Modelo...</option><option>DK150S</option><option>DL160</option><option>DM150</option><option>DR160</option><option>DR300</option><option>XCR 300</option><option>NK150</option><option>NK150S</option><option>NK 160</option><option>TR300</option><option>UFR150</option></select></td>
+                <td><input type="number" class="qty-input" min="1" value="1" onchange="updateTotal()" oninput="updateTotal()"></td>
+                <td><select class="color-select"><option value="">Color...</option><option value="ROJO">Rojo</option><option value="NEGRO">Negro</option><option value="NEGRO M.">Negro M.</option><option value="AZUL">Azul</option><option value="BLANCO">Blanco</option></select></td>
+                <td><input type="text" class="vin-input" placeholder="VIN (opcional)"></td>
+                <td><button type="button" class="btn-remove" onclick="removeRow(this)">🗑</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <button type="button" class="add-row-btn" onclick="addRow()">+ Agregar modelo</button>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Notas</div>
+          <div class="field" style="margin-bottom:10px">
+            <label>Instrucciones Especiales</label>
+            <textarea id="instrucciones" placeholder="Ej: Motocicletas en cajas (NO armadas). Solo 1 pieza de cada modelo armada."></textarea>
+          </div>
+        </div>
+
+        <div class="section" style="border-bottom:none">
+          <button type="button" class="submit-btn" onclick="submitRequest()">ENVIAR SOLICITUD</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ═══════════ TAB 2: DASHBOARD ═══════════ -->
+    <div class="tab-content" id="tab-dashboard">
+      <div class="toolbar">
+        <div class="toolbar-left" id="toolbarInfo">0 solicitudes</div>
+        <div class="toolbar-right">
+          <button class="btn-small" onclick="exportCSV()">📊 Exportar CSV</button>
+          <button class="btn-small danger" onclick="clearAll()">🗑 Limpiar todo</button>
+        </div>
+      </div>
+      <div class="status-filters" id="statusFilters">
+        <button class="filter-pill active" onclick="filterBy('all', this)">Todas</button>
+        <button class="filter-pill" onclick="filterBy('Pending', this)">Pending</button>
+        <button class="filter-pill" onclick="filterBy('Scheduled', this)">Scheduled</button>
+        <button class="filter-pill" onclick="filterBy('In Transit', this)">In Transit</button>
+        <button class="filter-pill" onclick="filterBy('Delivered', this)">Delivered</button>
+        <button class="filter-pill" onclick="filterBy('Delivered with Issue', this)">Issue</button>
+        <button class="filter-pill" onclick="filterBy('Cancelled', this)">Cancelled</button>
+      </div>
+      <div id="requestList" style="padding-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Solicitud enviada</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION — Paste your Google Apps Script URL here after deploying
+// ═══════════════════════════════════════════════════════════════════════════════
+const SCRIPT_URL = ''; // <-- PASTE YOUR APPS SCRIPT WEB APP URL HERE
+
+const CACHE_KEY = 'bolton_transport_cache';
+let currentFilter = 'all';
+let allRequests = [];
+
+const STATUS_MAP = {
+  'Pending':              { css: 'status-pending',    label: 'Pending' },
+  'Scheduled':            { css: 'status-scheduled',  label: 'Scheduled' },
+  'In Transit':           { css: 'status-in-transit', label: 'In Transit' },
+  'Delivered':            { css: 'status-delivered',  label: 'Delivered' },
+  'Delivered with Issue': { css: 'status-issue',      label: 'Delivered w/ Issue' },
+  'Cancelled':            { css: 'status-cancelled',  label: 'Cancelled' },
+};
+
+function isOnline() { return SCRIPT_URL && SCRIPT_URL.length > 10; }
+
+// ─── DATA LAYER (Google Sheets backend + localStorage cache) ──────────────────
+async function fetchAllRequests() {
+  // Show cached data immediately
+  try { allRequests = JSON.parse(localStorage.getItem(CACHE_KEY)) || []; } catch { allRequests = []; }
+  renderDashboardWithData();
+
+  if (!isOnline()) return;
+
+  // Then fetch fresh data from Google Sheets
+  try {
+    showLoading(true);
+    const res = await fetch(SCRIPT_URL);
+    const data = await res.json();
+    allRequests = Array.isArray(data) ? data.reverse() : [];
+    localStorage.setItem(CACHE_KEY, JSON.stringify(allRequests));
+    renderDashboardWithData();
+  } catch (err) {
+    console.warn('Could not fetch from backend, using cache:', err);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function addRequestToBackend(req) {
+  // Optimistic: add to local cache immediately
+  allRequests.unshift(req);
+  localStorage.setItem(CACHE_KEY, JSON.stringify(allRequests));
+  updateBadge();
+
+  if (!isOnline()) return;
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'add', data: req }),
+    });
+  } catch (err) { console.warn('Could not save to backend:', err); }
+}
+
+async function updateStatusOnBackend(id, newStatus) {
+  // Optimistic update
+  const req = allRequests.find(r => String(r.id) === String(id));
+  if (req) req.status = newStatus;
+  localStorage.setItem(CACHE_KEY, JSON.stringify(allRequests));
+  updateBadge();
+  renderDashboardWithData();
+
+  if (!isOnline()) return;
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'updateStatus', id: String(id), status: newStatus }),
+    });
+  } catch (err) { console.warn('Could not update status on backend:', err); }
+}
+
+async function deleteFromBackend(id) {
+  allRequests = allRequests.filter(r => String(r.id) !== String(id));
+  localStorage.setItem(CACHE_KEY, JSON.stringify(allRequests));
+  updateBadge();
+  renderDashboardWithData();
+
+  if (!isOnline()) return;
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'delete', id: String(id) }),
+    });
+  } catch (err) { console.warn('Could not delete on backend:', err); }
+}
+
+function showLoading(on) {
+  const list = document.getElementById('requestList');
+  if (on && allRequests.length === 0) {
+    list.innerHTML = '<div class="dashboard-empty"><div class="empty-icon">⏳</div><div>Cargando solicitudes...</div></div>';
+  }
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (tab === 'form') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('tab-form').classList.add('active');
+  } else {
+    document.getElementById('dashTab').classList.add('active');
+    document.getElementById('tab-dashboard').classList.add('active');
+    fetchAllRequests();
+  }
+}
+
+// ─── FORM ─────────────────────────────────────────────────────────────────────
+document.getElementById('fechaSolicitud').valueAsDate = new Date();
+
+const SKU_HTML = '<option value="">Modelo...</option><option>DK150S</option><option>DL160</option><option>DM150</option><option>DR160</option><option>DR300</option><option>XCR 300</option><option>NK150</option><option>NK150S</option><option>NK 160</option><option>TR300</option><option>UFR150</option>';
+const COLOR_HTML = '<option value="">Color...</option><option value="ROJO">Rojo</option><option value="NEGRO">Negro</option><option value="NEGRO M.">Negro M.</option><option value="AZUL">Azul</option><option value="BLANCO">Blanco</option>';
+
+function addRow() {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select class="sku-select" onchange="updateTotal()">${SKU_HTML}</select></td>
+    <td><input type="number" class="qty-input" min="1" value="1" onchange="updateTotal()" oninput="updateTotal()"></td>
+    <td><select class="color-select">${COLOR_HTML}</select></td>
+    <td><input type="text" class="vin-input" placeholder="VIN (opcional)"></td>
+    <td><button type="button" class="btn-remove" onclick="removeRow(this)">🗑</button></td>`;
+  document.getElementById('merchBody').appendChild(tr);
+  updateTotal();
+}
+
+function removeRow(btn) {
+  const tbody = document.getElementById('merchBody');
+  if (tbody.rows.length > 1) { btn.closest('tr').remove(); updateTotal(); }
+}
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('#merchBody .qty-input').forEach(i => { total += parseInt(i.value) || 0; });
+  document.getElementById('totalBadge').textContent = total + ' pieza' + (total !== 1 ? 's' : '');
+}
+
+function getItems() {
+  const items = [];
+  document.querySelectorAll('#merchBody tr').forEach(r => {
+    const sku = r.querySelector('.sku-select').value;
+    const qty = parseInt(r.querySelector('.qty-input').value) || 0;
+    const color = r.querySelector('.color-select').value;
+    const vin = r.querySelector('.vin-input').value.trim();
+    if (sku && qty > 0) items.push({ sku, qty, color, vin });
+  });
+  return items;
+}
+
+function formatDate(d) { if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
+
+function submitRequest() {
+  const fechaServicio = document.getElementById('fechaServicio').value;
+  const noPedido = document.getElementById('noPedido').value.trim();
+  const solicitante = document.getElementById('solicitante').value.trim();
+  const tipoServicio = document.getElementById('tipoServicio').value;
+  const destinatario = document.getElementById('destinatario').value.trim();
+  const domicilio = document.getElementById('domicilioEntrega').value.trim();
+  const contacto = document.getElementById('contactoEntrega').value.trim();
+  const tel = document.getElementById('telEntrega').value.trim();
+  const email = document.getElementById('emailEntrega').value.trim();
+  const referencia = document.getElementById('referencia').value.trim();
+  const instrucciones = document.getElementById('instrucciones').value.trim();
+
+  if (!fechaServicio || !noPedido || !solicitante || !destinatario || !domicilio || !contacto || !tel) {
+    alert('Completa todos los campos obligatorios (*)');
+    return;
+  }
+  const items = getItems();
+  if (items.length === 0) { alert('Agrega al menos un modelo de motocicleta'); return; }
+
+  const totalPiezas = items.reduce((s, i) => s + i.qty, 0);
+
+  const req = {
+    id: Date.now(),
+    fechaSolicitud: document.getElementById('fechaSolicitud').value,
+    fechaServicio, noPedido, solicitante, tipoServicio,
+    destinatario, domicilio, contacto, tel, email, referencia,
+    instrucciones, items, totalPiezas,
+    status: 'Pending',
+  };
+
+  addRequestToBackend(req);
+
+  // Reset form
+  document.getElementById('fechaServicio').value = '';
+  document.getElementById('noPedido').value = '';
+  document.getElementById('destinatario').value = '';
+  document.getElementById('domicilioEntrega').value = '';
+  document.getElementById('contactoEntrega').value = '';
+  document.getElementById('telEntrega').value = '';
+  document.getElementById('emailEntrega').value = '';
+  document.getElementById('referencia').value = '';
+  document.getElementById('instrucciones').value = '';
+  document.getElementById('merchBody').innerHTML = `<tr>
+    <td><select class="sku-select" onchange="updateTotal()">${SKU_HTML}</select></td>
+    <td><input type="number" class="qty-input" min="1" value="1" onchange="updateTotal()" oninput="updateTotal()"></td>
+    <td><select class="color-select">${COLOR_HTML}</select></td>
+    <td><input type="text" class="vin-input" placeholder="VIN (opcional)"></td>
+    <td><button type="button" class="btn-remove" onclick="removeRow(this)">🗑</button></td></tr>`;
+  updateTotal();
+
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => switchTab('dashboard'), 800);
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function updateBadge() {
+  const pending = allRequests.filter(r => r.status !== 'Delivered' && r.status !== 'Cancelled').length;
+  document.getElementById('countBadge').textContent = pending || allRequests.length;
+}
+
+function changeStatus(id, newStatus) {
+  updateStatusOnBackend(id, newStatus);
+}
+
+function filterBy(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderDashboardWithData();
+}
+
+function buildSlackMsg(r) {
+  const merchLines = r.items.map(i => {
+    let s = `  • ${i.qty}x ${i.sku}`;
+    if (i.color) s += ` (${i.color})`;
+    if (i.vin) s += ` — VIN: ${i.vin}`;
+    return s;
+  }).join('\n');
+
+  let msg = `🚛 *Solicitud de Transporte* — Pedido #${r.noPedido}\n`;
+  msg += `📅 Servicio: ${formatDate(r.fechaServicio)} | Tipo: ${r.tipoServicio}\n`;
+  msg += `👤 Solicitante: ${r.solicitante}\n`;
+  msg += `📍 Destino: ${r.destinatario} — ${r.domicilio}\n`;
+  msg += `📞 Contacto: ${r.contacto} — ${r.tel}\n`;
+  if (r.referencia) msg += `📌 Ref: ${r.referencia}\n`;
+  msg += `📦 ${r.totalPiezas} pieza${r.totalPiezas !== 1 ? 's' : ''}:\n${merchLines}\n`;
+  if (r.instrucciones) msg += `⚠️ ${r.instrucciones}\n`;
+  return msg;
+}
+
+function renderDashboardWithData() {
+  let reqs = [...allRequests];
+  const list = document.getElementById('requestList');
+  document.getElementById('toolbarInfo').textContent = allRequests.length + ' solicitud' + (allRequests.length !== 1 ? 'es' : '')
+    + (isOnline() ? '' : ' (modo local)');
+
+  if (currentFilter !== 'all') {
+    reqs = reqs.filter(r => (r.status || 'Pending') === currentFilter);
+  }
+
+  if (reqs.length === 0) {
+    list.innerHTML = '<div class="dashboard-empty"><div class="empty-icon">📭</div><div>' +
+      (currentFilter !== 'all' ? 'No hay solicitudes con estado "' + currentFilter + '"' : 'No hay solicitudes todavia.') +
+      '</div></div>';
+    return;
+  }
+
+  list.innerHTML = reqs.map(r => {
+    const st = STATUS_MAP[r.status || 'Pending'] || STATUS_MAP['Pending'];
+    const slackMsg = buildSlackMsg(r);
+    const isCancelled = r.status === 'Cancelled';
+
+    const statusOptions = Object.keys(STATUS_MAP).map(k =>
+      `<option value="${k}" ${(r.status||'Pending')===k?'selected':''}>${STATUS_MAP[k].label}</option>`
+    ).join('');
+
+    return `
+    <div class="request-card ${isCancelled ? 'status-cancelled-card' : ''}" id="card-${r.id}">
+      <div class="card-header" onclick="toggleCard('${r.id}')">
+        <div class="card-left">
+          <span class="order-num">#${r.noPedido}</span>
+          <span class="status-tag ${st.css}">${st.label}</span>
+          <span class="date">📅 ${formatDate(r.fechaServicio)}</span>
+          <span class="pieces">${r.totalPiezas} pza${r.totalPiezas !== 1 ? 's' : ''}</span>
+          ${r.tipoServicio === 'Foráneo' ? '<span class="foranea-tag">FORANEO</span>' : ''}
+          <span class="dest-name">${r.destinatario}</span>
+        </div>
+        <div class="card-right">
+          <span style="font-size:12px;color:#BDC3C7">▼</span>
+        </div>
+      </div>
+      <div class="card-body" id="body-${r.id}">
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+          <label style="margin:0;font-size:11px">ESTADO:</label>
+          <select class="status-select" onchange="changeStatus('${r.id}', this.value)" onclick="event.stopPropagation()">
+            ${statusOptions}
+          </select>
+        </div>
+        <div class="detail-grid">
+          <div><div class="detail-label">Solicitante</div><div class="detail-value">${r.solicitante}</div></div>
+          <div><div class="detail-label">Fecha solicitud</div><div class="detail-value">${formatDate(r.fechaSolicitud)}</div></div>
+          <div><div class="detail-label">Destinatario</div><div class="detail-value">${r.destinatario}</div></div>
+          <div><div class="detail-label">Tipo</div><div class="detail-value">${r.tipoServicio}</div></div>
+          <div><div class="detail-label">Domicilio</div><div class="detail-value">${r.domicilio}</div></div>
+          <div><div class="detail-label">Contacto entrega</div><div class="detail-value">${r.contacto} — ${r.tel}${r.email ? ' — ' + r.email : ''}</div></div>
+          ${r.referencia ? `<div><div class="detail-label">Referencia</div><div class="detail-value">${r.referencia}</div></div>` : ''}
+          ${r.instrucciones ? `<div><div class="detail-label">Instrucciones</div><div class="detail-value">${r.instrucciones}</div></div>` : ''}
+        </div>
+        <div class="merch-summary">
+          ${(r.items||[]).map(i => `<div class="line"><span class="qty">${i.qty}x</span><span>${i.sku}</span>${i.color ? `<span style="color:#7F8C8D">— ${i.color}</span>` : ''}${i.vin ? `<span style="font-size:11px;font-family:monospace;color:#95A5A6">VIN: ${i.vin}</span>` : ''}</div>`).join('')}
+        </div>
+        <div class="copy-block">
+          <div class="copy-block-header">
+            <span>Mensaje para chat — copiar y pegar</span>
+            <button class="copy-btn" onclick="event.stopPropagation(); copyMsg('${r.id}', this)">📋 Copiar</button>
+          </div>
+          <div class="copy-block-content" id="msg-${r.id}">${escapeHtml(slackMsg)}</div>
+        </div>
+        <div style="margin-top:10px;text-align:right">
+          <button class="btn-small danger" onclick="event.stopPropagation(); deleteRequest('${r.id}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function toggleCard(id) {
+  document.getElementById('body-' + id).classList.toggle('open');
+}
+
+function copyMsg(id, btn) {
+  const text = document.getElementById('msg-' + id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copiado'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copiar'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '✅ Copiado'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 Copiar'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function deleteRequest(id) {
+  if (!confirm('¿Eliminar esta solicitud?')) return;
+  deleteFromBackend(id);
+}
+
+function clearAll() {
+  if (!confirm('¿Eliminar TODAS las solicitudes?')) return;
+  allRequests = [];
+  localStorage.setItem(CACHE_KEY, '[]');
+  updateBadge(); renderDashboardWithData();
+}
+
+function exportCSV() {
+  if (!allRequests.length) { alert('No hay solicitudes'); return; }
+  const h = ['Fecha Solicitud','Fecha Servicio','No. Pedido','Tipo','Solicitante','Destinatario','Domicilio','Contacto','Telefono','Email','Referencia','Total Piezas','Detalle','Instrucciones','Status'];
+  const rows = allRequests.map(r => [
+    formatDate(r.fechaSolicitud), formatDate(r.fechaServicio), r.noPedido, r.tipoServicio,
+    r.solicitante, r.destinatario, r.domicilio, r.contacto, r.tel, r.email, r.referencia,
+    r.totalPiezas, (r.items||[]).map(i => `${i.qty}x ${i.sku} ${i.color}`).join('; '), r.instrucciones, r.status||'Pending'
+  ]);
+  const csv = [h,...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `bolton_transporte_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+try { allRequests = JSON.parse(localStorage.getItem(CACHE_KEY)) || []; } catch { allRequests = []; }
+updateBadge();
+
+// Connection indicator
+if (!isOnline()) {
+  console.log('⚠️ Running in LOCAL MODE. Paste your Google Apps Script URL in the SCRIPT_URL variable to enable shared data.');
+}
+</script>
+</body>
+</html>
