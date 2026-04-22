@@ -158,6 +158,18 @@
   .filter-pill:hover { border-color: var(--gold); color: var(--text); }
   .filter-pill.active { background: var(--bg-dark); color: var(--gold); border-color: var(--bg-dark); }
 
+  /* ─── ACCESS GATE ─── */
+  .gate-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .gate-box { background: var(--white); border-radius: 12px; padding: 40px; max-width: 380px; width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .gate-box .gate-logo { margin-bottom: 16px; }
+  .gate-box h2 { font-size: 20px; color: var(--bg-dark); margin-bottom: 4px; }
+  .gate-box .gate-subtitle { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .gate-box input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid var(--border); border-radius: 6px; text-align: center; letter-spacing: 3px; font-weight: 600; }
+  .gate-box input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(200,169,97,0.15); }
+  .gate-box .gate-btn { width: 100%; margin-top: 12px; padding: 12px; background: var(--bg-dark); color: var(--gold); border: none; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; }
+  .gate-box .gate-btn:hover { background: #000; }
+  .gate-error { color: var(--red); font-size: 12px; font-weight: 600; margin-top: 8px; display: none; }
+
   @media (max-width: 600px) {
     .container { padding: 8px; }
     .row { flex-direction: column; gap: 8px; }
@@ -170,7 +182,23 @@
 </style>
 </head>
 <body>
-<div class="container">
+<!-- ACCESS GATE -->
+<div class="gate-overlay" id="accessGate">
+  <div class="gate-box">
+    <div class="gate-logo">
+      <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 10 L20 90 L55 90 Q80 90 80 70 Q80 55 60 50 Q75 45 75 32 Q75 10 55 10 Z M35 22 L50 22 Q60 22 60 32 Q60 42 50 42 L35 42 Z M35 52 L52 52 Q65 52 65 67 Q65 78 52 78 L35 78 Z" fill="#C8A961"/>
+      </svg>
+    </div>
+    <h2>Bolton Motors</h2>
+    <div class="gate-subtitle">Ingresa la clave de acceso para continuar</div>
+    <input type="password" id="accessKeyInput" placeholder="Clave de acceso" onkeydown="if(event.key==='Enter') validateAccess()">
+    <button class="gate-btn" onclick="validateAccess()">ENTRAR</button>
+    <div class="gate-error" id="gateError">Clave incorrecta. Intenta de nuevo.</div>
+  </div>
+</div>
+
+<div class="container" id="mainApp" style="display:none">
   <div class="header">
     <div class="header-left">
       <!-- Bolton "B" logo -->
@@ -330,7 +358,32 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION — Paste your Google Apps Script URL here after deploying
 // ═══════════════════════════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/a/macros/didi-labs.com/s/AKfycbxSmXUQK0DHparlLCc_jcRK1hQ0iGME7Dnz30TbWlGEwes4fB_m129z81b5fz5OrntWLQ/exec';
+const SCRIPT_URL = ''; // <-- PASTE YOUR PERSONAL GMAIL APPS SCRIPT URL HERE
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACCESS KEY — Change this to whatever key you want to share with your team
+// ═══════════════════════════════════════════════════════════════════════════════
+const ACCESS_KEY = 'bolton2026';
+
+// ─── ACCESS GATE ──────────────────────────────────────────────────────────────
+function validateAccess() {
+  const input = document.getElementById('accessKeyInput').value.trim();
+  if (input === ACCESS_KEY) {
+    localStorage.setItem('bolton_access', 'granted');
+    document.getElementById('accessGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+  } else {
+    document.getElementById('gateError').style.display = 'block';
+    document.getElementById('accessKeyInput').value = '';
+    document.getElementById('accessKeyInput').focus();
+  }
+}
+
+// Auto-login if previously authenticated
+if (localStorage.getItem('bolton_access') === 'granted') {
+  document.getElementById('accessGate').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+}
 
 const CACHE_KEY = 'bolton_transport_cache';
 let currentFilter = 'all';
@@ -358,7 +411,7 @@ async function fetchAllRequests() {
   // Then fetch fresh data from Google Sheets
   try {
     showLoading(true);
-    const res = await fetch(SCRIPT_URL);
+    const res = await fetch(SCRIPT_URL + '?key=' + encodeURIComponent(ACCESS_KEY));
     const data = await res.json();
     allRequests = Array.isArray(data) ? data.reverse() : [];
     localStorage.setItem(CACHE_KEY, JSON.stringify(allRequests));
@@ -382,7 +435,7 @@ async function addRequestToBackend(req) {
     await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'add', data: req }),
+      body: JSON.stringify({ action: 'add', data: req, key: ACCESS_KEY }),
     });
   } catch (err) { console.warn('Could not save to backend:', err); }
 }
@@ -401,7 +454,7 @@ async function updateStatusOnBackend(id, newStatus) {
     await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', id: String(id), status: newStatus }),
+      body: JSON.stringify({ action: 'updateStatus', id: String(id), status: newStatus, key: ACCESS_KEY }),
     });
   } catch (err) { console.warn('Could not update status on backend:', err); }
 }
@@ -418,7 +471,7 @@ async function deleteFromBackend(id) {
     await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'delete', id: String(id) }),
+      body: JSON.stringify({ action: 'delete', id: String(id), key: ACCESS_KEY }),
     });
   } catch (err) { console.warn('Could not delete on backend:', err); }
 }
