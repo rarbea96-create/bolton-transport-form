@@ -245,6 +245,10 @@
               <input type="text" id="solicitante" placeholder="Tu nombre" required>
             </div>
             <div class="field">
+              <label>Empresa / Dealer Destino *</label>
+              <input type="text" id="destinatario" placeholder="Nombre del dealer, tienda, o cliente" required>
+            </div>
+            <div class="field small">
               <label>Tipo de Envio</label>
               <select id="tipoServicio">
                 <option value="Local">Local</option>
@@ -256,12 +260,6 @@
 
         <div class="section">
           <div class="section-title">Destino de Entrega</div>
-          <div class="row">
-            <div class="field wide">
-              <label>Nombre / Empresa del destinatario *</label>
-              <input type="text" id="destinatario" placeholder="Nombre del dealer, tienda, o cliente" required>
-            </div>
-          </div>
           <div class="row">
             <div class="field wide">
               <label>Domicilio completo *</label>
@@ -337,6 +335,11 @@
           <button class="btn-small" onclick="exportCSV()">📊 Exportar CSV</button>
           <button class="btn-small danger" onclick="clearAll()">🗑 Limpiar todo</button>
         </div>
+      </div>
+      <div style="padding:8px 24px;background:#F8F8F8;border-bottom:1px solid #EEE;display:flex;align-items:center;gap:8px;">
+        <label style="font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap">VENDEDOR:</label>
+        <input type="text" id="vendedorFilter" placeholder="Filtrar por solicitante..." oninput="renderDashboardWithData()" style="flex:1;max-width:240px;padding:5px 10px;font-size:13px;border:1px solid var(--border);border-radius:4px;">
+        <button class="btn-small" onclick="document.getElementById('vendedorFilter').value='';renderDashboardWithData()">✕</button>
       </div>
       <div class="status-filters" id="statusFilters">
         <button class="filter-pill active" onclick="filterBy('all', this)">Todas</button>
@@ -498,7 +501,14 @@ function switchTab(tab) {
 }
 
 // ─── FORM ─────────────────────────────────────────────────────────────────────
-document.getElementById('fechaSolicitud').valueAsDate = new Date();
+// Fix: use local date, not UTC (valueAsDate causes timezone shift)
+(function() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  document.getElementById('fechaSolicitud').value = yyyy + '-' + mm + '-' + dd;
+})();
 
 const SKU_HTML = '<option value="">Modelo...</option><option>DK150S</option><option>DL160</option><option>DM150</option><option>DR160</option><option>DR300</option><option>XCR 300</option><option>NK150</option><option>NK150S</option><option>NK 160</option><option>TR300</option><option>UFR150</option>';
 const COLOR_HTML = '<option value="">Color...</option><option value="ROJO">Rojo</option><option value="NEGRO">Negro</option><option value="NEGRO M.">Negro M.</option><option value="AZUL">Azul</option><option value="BLANCO">Blanco</option>';
@@ -641,6 +651,10 @@ function renderDashboardWithData() {
 
   if (currentFilter !== 'all') {
     reqs = reqs.filter(r => (r.status || 'Pending') === currentFilter);
+  }
+  const vendedorQ = (document.getElementById('vendedorFilter').value || '').toLowerCase().trim();
+  if (vendedorQ) {
+    reqs = reqs.filter(r => (r.solicitante || '').toLowerCase().includes(vendedorQ));
   }
 
   if (reqs.length === 0) {
